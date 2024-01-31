@@ -30,4 +30,12 @@ rb_node *dictionary_delete(rb_tree *dictionary, char *word);
 void rb_node_destroy(rb_node *node);
 void dictionary_destroy(rb_tree *dictionary);
 
+// Dictionary helpers
+#define IS_RED(node) (node && node->color == RED)
+#define IS_BLACK(node) (node && node->color == BLACK)
+void dictionary_fix_structure(rb_tree *dictionary, rb_node *node);
+void left_rotate(rb_tree *dictionary, rb_node *node);
+void right_rotate(rb_tree *dictionary, rb_node *node);
+void swap_colors(int *a, int *b);
+
 #endif // DICTIONARY_H

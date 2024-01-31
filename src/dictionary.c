@@ -36,7 +36,7 @@ rb_node *dictionary_search(rb_tree *dictionary, char *word, rb_node **prev)
         else
             p = p->right;
     }
-    if (p->word)
+    if (p && p->word)
         return p;
     return NULL;
 }
@@ -75,11 +75,8 @@ void dictionary_insert(rb_tree *dictionary, char *word)
     else
         parent->right = new_element;
 
-    // fix structure of dictionary
-    do
-    {
-        ERR("TODO", NOT_IMPLEMENTED);
-    } while (1);
+    // fix rb tree structure
+    dictionary_fix_structure(dictionary, new_element);
 }
 
 rb_node *dictionary_delete(rb_tree *dictionary, char *word)
@@ -102,4 +99,119 @@ void dictionary_destroy(rb_tree *dictionary)
 {
     rb_node_destroy(dictionary->root);
     free(dictionary);
+}
+
+void dictionary_fix_structure(rb_tree *dictionary, rb_node *node)
+{
+    rb_node *parent = NULL;
+    rb_node *grandparent = NULL;
+    rb_node *uncle = NULL;
+    rb_node *root = dictionary->root;
+
+    while ((node != root) && IS_RED(node) && IS_RED(node->parent))
+    {
+        parent = node->parent;
+        grandparent = parent->parent;
+
+        // Parent of node is left child of grandparent
+        if (parent == grandparent->left)
+        {
+            uncle = grandparent->right;
+            // Uncle is red
+            if (IS_RED(uncle))
+            {
+                parent->color = BLACK;
+                grandparent->right->color = BLACK;
+                grandparent->color = RED;
+                node = grandparent;
+            }
+            // Uncle is black or doesnt exist
+            else
+            {
+                // node is left child of parent
+                if (parent->right == node)
+                {
+                    left_rotate(dictionary, parent);
+                    node = parent;
+                    parent = node->parent;
+                }
+                // node is right child of parent (we dont put it in else, as it's also next step of above case)
+                right_rotate(dictionary, grandparent);
+                swap_colors((int *)&parent->color, (int *)&grandparent->color);
+                node = parent;
+            }
+        }
+        // Parent of node is right child of grandparent
+        else
+        {
+            uncle = grandparent->left;
+            // Uncle is red
+            if (IS_RED(uncle))
+            {
+                parent->color = BLACK;
+                grandparent->right->color = BLACK;
+                grandparent->color = RED;
+                node = grandparent;
+            }
+            // Uncle is black or doesnt exist
+            else
+            {
+                // node is right child of parent
+                if (parent->left == node)
+                {
+                    right_rotate(dictionary, parent);
+                    node = parent;
+                    parent = node->parent;
+                }
+                // node is left child of parent (we dont put it in else, as it's also next step of above case)
+                left_rotate(dictionary, grandparent);
+                swap_colors((int *)&parent->color, (int *)&grandparent->color);
+                node = grandparent;
+            }
+        }
+    }
+
+    if (IS_RED(dictionary->root))
+        dictionary->root->color = BLACK;
+}
+
+void left_rotate(rb_tree *dictionary, rb_node *node)
+{
+    rb_node *right = node->right;
+    node->right = right->left;
+    if (node->right)
+        node->right->parent = node;
+    right->parent = node->parent;
+    if (!right->parent)
+        dictionary->root = right;
+    else if (node == node->parent->left)
+        node->parent->left = right;
+    else
+        node->parent->right = right;
+    right->left = node;
+    node->parent = right;
+}
+
+void right_rotate(rb_tree *dictionary, rb_node *node)
+{
+    rb_node *left = node->left;
+    node->left = left->right;
+    if (node->left)
+        node->left->parent = node;
+    left->parent = node->parent;
+    if (!left->parent)
+        dictionary->root = left;
+    else if (node == node->parent->left)
+        node->parent->left = left;
+    else
+        node->parent->right = left;
+    left->right = node;
+    node->parent = left;
+}
+
+void swap_colors(int *a, int *b)
+{
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
