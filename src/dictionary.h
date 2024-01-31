@@ -13,7 +13,7 @@ enum node_color
 typedef struct __node
 {
     char *word;
-    struct __node *left, *right;
+    struct __node *left, *right, *parent;
     enum node_color color;
 } node;
 
@@ -26,6 +26,6 @@ void dictionary_destroy(node *dictionary);
 
 // Dictionary helpers
 int is_four_node(node *p);
-void split_four_node(node *p, node *prev, node *pprev);
+void split_four_node(node *p);
 
 #endif // DICTIONARY_H

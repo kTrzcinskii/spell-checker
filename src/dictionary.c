@@ -13,6 +13,7 @@ node *dictionary_create()
     dict->color = BLACK;
     dict->left = NULL;
     dict->right = NULL;
+    dict->parent = NULL;
     return dict;
 }
 
@@ -57,22 +58,29 @@ void dictionary_insert(node *dictionary, char *word)
     new_element->right = NULL;
     new_element->color = RED;
 
-    node **p = &dictionary;
-    node *prev = NULL, *pprev = NULL;
-
-    while (*p)
+    node *prev = NULL;
+    int comparison = 0;
+    while (dictionary)
     {
-        if (is_four_node(*p))
-            split_four_node(*p, prev, pprev);
-        pprev = prev;
-        prev = *p;
-        int comparison = strcmp(word, (*p)->word);
+        if (is_four_node(dictionary))
+            split_four_node(dictionary);
+        prev = dictionary;
+        comparison = strcmp(word, dictionary->word);
         if (comparison < 0)
-            p = &((*p)->left);
+            dictionary = dictionary->left;
         else
-            p = &((*p)->right);
+            dictionary = dictionary->right;
     }
-    *p = new_element;
+
+    if (comparison < 0)
+    {
+        prev->left = dictionary;
+    }
+    else
+    {
+        prev->right = dictionary;
+    }
+    dictionary->parent = prev;
 }
 
 node *dictionary_delete(node *dictionary, char *word)
@@ -94,7 +102,7 @@ int is_four_node(node *p)
     return p && p->color == BLACK && p->left && p->left->color == RED && p->right && p->right->color == RED;
 }
 
-void split_four_node(node *p, node *prev, node *pprev)
+void split_four_node(node *p)
 {
     ERR("TODO");
 }
