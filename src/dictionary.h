@@ -5,27 +5,29 @@
 #include <stdlib.h>
 
 // Dictionary structures
-enum node_color
+enum rb_node_color
 {
     RED,
     BLACK
 };
-typedef struct __node
+typedef struct __rb_node
 {
     char *word;
-    struct __node *left, *right, *parent;
-    enum node_color color;
-} node;
+    struct __rb_node *left, *right, *parent;
+    enum rb_node_color color;
+} rb_node;
+
+typedef struct __rb_tree
+{
+    rb_node *root;
+} rb_tree;
 
 // Dictionary interface
-node *dictionary_create();
-node *dictionary_search(node *dictionary, char *word);
-void dictionary_insert(node *dictionary, char *word);
-node *dictionary_delete(node *dictionary, char *word);
-void dictionary_destroy(node *dictionary);
-
-// Dictionary helpers
-int is_four_node(node *p);
-void split_four_node(node *p);
+rb_tree *dictionary_create();
+rb_node *dictionary_search(rb_tree *dictionary, char *word, rb_node **prev);
+void dictionary_insert(rb_tree *dictionary, char *word);
+rb_node *dictionary_delete(rb_tree *dictionary, char *word);
+void rb_node_destroy(rb_node *node);
+void dictionary_destroy(rb_tree *dictionary);
 
 #endif // DICTIONARY_H

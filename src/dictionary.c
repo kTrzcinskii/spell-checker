@@ -3,106 +3,103 @@
 #include "dictionary.h"
 #include "error_handler.h"
 
-node *dictionary_create()
+rb_tree *dictionary_create()
 {
-    node *dict = malloc(sizeof(node));
-    if (!dict)
-        ERR("malloc");
+    rb_node *root = malloc(sizeof(rb_node));
+    if (!root)
+        ERR("malloc", GENERAL_ERROR);
     // At first root does not have value inserted
-    dict->word = NULL;
-    dict->color = BLACK;
-    dict->left = NULL;
-    dict->right = NULL;
-    dict->parent = NULL;
+    root->word = NULL;
+    root->color = BLACK;
+    root->left = NULL;
+    root->right = NULL;
+    root->parent = NULL;
+    rb_tree *dict = malloc(sizeof(rb_tree));
+    if (!dict)
+        ERR("malloc", GENERAL_ERROR);
+    dict->root = root;
     return dict;
 }
 
-node *dictionary_search(node *dictionary, char *word)
+rb_node *dictionary_search(rb_tree *dictionary, char *word, rb_node **prev)
 {
-    while (dictionary && dictionary->word)
+    rb_node *p = dictionary->root;
+    *prev = NULL;
+    while (p && p->word)
     {
-        int comparison = strcmp(word, dictionary->word);
+        int comparison = strcmp(word, p->word);
         if (comparison == 0)
             break;
+        *prev = p;
         if (comparison < 0)
-            dictionary = dictionary->left;
+            p = p->left;
         else
-            dictionary = dictionary->right;
+            p = p->right;
     }
-    if (dictionary->word)
-        return dictionary;
+    if (p->word)
+        return p;
     return NULL;
 }
 
-void dictionary_insert(node *dictionary, char *word)
+void dictionary_insert(rb_tree *dictionary, char *word)
 {
+    rb_node *parent = NULL;
     // element is already in the dictionary
-    if (dictionary_search(dictionary, word))
+    if (dictionary_search(dictionary, word, &parent))
         return;
+
+    rb_node *p = dictionary->root;
     // it's first element to be insterted - so it will be in the root
-    if (!dictionary->word)
+    if (!p->word)
     {
-        dictionary->word = malloc(sizeof(char) * (strlen(word) + 1));
-        if (!dictionary->word)
-            ERR("malloc");
-        strcpy(dictionary->word, word);
+        p->word = malloc(sizeof(char) * (strlen(word) + 1));
+        if (!p->word)
+            ERR("malloc", GENERAL_ERROR);
+        strcpy(p->word, word);
         return;
     }
+
     // it's elment outside the root
-    node *new_element = malloc(sizeof(node));
+    // create new element
+    rb_node *new_element = malloc(sizeof(rb_node));
     if (!new_element)
-        ERR("malloc");
+        ERR("malloc", GENERAL_ERROR);
     new_element->word = malloc(sizeof(char) * (strlen(word) + 1));
     strcpy(new_element->word, word);
     new_element->left = NULL;
     new_element->right = NULL;
     new_element->color = RED;
-
-    node *prev = NULL;
-    int comparison = 0;
-    while (dictionary)
-    {
-        if (is_four_node(dictionary))
-            split_four_node(dictionary);
-        prev = dictionary;
-        comparison = strcmp(word, dictionary->word);
-        if (comparison < 0)
-            dictionary = dictionary->left;
-        else
-            dictionary = dictionary->right;
-    }
-
-    if (comparison < 0)
-    {
-        prev->left = dictionary;
-    }
+    new_element->parent = parent;
+    if (strcmp(new_element->word, parent->word) < 0)
+        parent->left = new_element;
     else
+        parent->right = new_element;
+
+    // fix structure of dictionary
+    do
     {
-        prev->right = dictionary;
-    }
-    dictionary->parent = prev;
+        ERR("TODO", NOT_IMPLEMENTED);
+    } while (1);
 }
 
-node *dictionary_delete(node *dictionary, char *word)
+rb_node *dictionary_delete(rb_tree *dictionary, char *word)
 {
-    ERR("TODO");
+    ERR("TODO", NOT_IMPLEMENTED);
     return NULL;
 }
 
-void dictionary_destroy(node *dictionary)
+void rb_node_destroy(rb_node *node)
 {
-    dictionary_destroy(dictionary->left);
-    dictionary_destroy(dictionary->right);
-    free(dictionary->word);
+    if (!node)
+        return;
+    rb_node_destroy(node->left);
+    rb_node_destroy(node->right);
+    free(node->word);
+    free(node);
+}
+
+void dictionary_destroy(rb_tree *dictionary)
+{
+    rb_node_destroy(dictionary->root);
     free(dictionary);
-}
-
-int is_four_node(node *p)
-{
-    return p && p->color == BLACK && p->left && p->left->color == RED && p->right && p->right->color == RED;
-}
-
-void split_four_node(node *p)
-{
-    ERR("TODO");
 }
