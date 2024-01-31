@@ -26,6 +26,7 @@ typedef struct __rb_tree
 rb_tree *dictionary_create();
 rb_node *dictionary_search(rb_tree *dictionary, char *word, rb_node **prev);
 void dictionary_insert(rb_tree *dictionary, char *word);
+void dictionary_load_from_file(rb_tree *dictionary, char *path);
 rb_node *dictionary_delete(rb_tree *dictionary, char *word);
 void rb_node_destroy(rb_node *node);
 void dictionary_destroy(rb_tree *dictionary);

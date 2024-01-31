@@ -24,13 +24,15 @@ rb_tree *dictionary_create()
 rb_node *dictionary_search(rb_tree *dictionary, char *word, rb_node **prev)
 {
     rb_node *p = dictionary->root;
-    *prev = NULL;
+    if (prev)
+        *prev = NULL;
     while (p && p->word)
     {
         int comparison = strcmp(word, p->word);
         if (comparison == 0)
             break;
-        *prev = p;
+        if (prev)
+            *prev = p;
         if (comparison < 0)
             p = p->left;
         else
@@ -77,6 +79,29 @@ void dictionary_insert(rb_tree *dictionary, char *word)
 
     // fix rb tree structure
     dictionary_fix_structure(dictionary, new_element);
+}
+
+void dictionary_load_from_file(rb_tree *dictionary, char *path)
+{
+    FILE *file = fopen(path, "r");
+    if (!file)
+        ERR("Couldn't open file", FILE_ERROR);
+
+    char *line = NULL;
+    size_t line_length = 0;
+    ssize_t read = 0;
+
+    while ((read = getline(&line, &line_length, file)) != -1)
+    {
+        if (line[strlen(line) - 1] == '\n')
+            line[strlen(line) - 1] = '\0';
+        dictionary_insert(dictionary, line);
+    }
+
+    free(line);
+
+    if (fclose(file))
+        ERR("Couldn't close file", FILE_ERROR);
 }
 
 rb_node *dictionary_delete(rb_tree *dictionary, char *word)
