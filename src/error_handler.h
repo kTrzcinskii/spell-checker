@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 
-#define ERR(source) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(EXIT_FAILURE))
+#define GENERAL_ERROR EXIT_FAILURE
+#define NOT_IMPLEMENTED 2
+
+#define ERR(source, error_code) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(error_code))
 
 #endif // ERROR_HANDLER
