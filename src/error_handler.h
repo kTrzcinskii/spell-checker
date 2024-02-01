@@ -7,6 +7,8 @@
 #define NOT_IMPLEMENTED 2
 #define FILE_ERROR 3
 
+#define ERROR_MESSAGE_BUFFER 1024
+
 #define ERR(source, error_code) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(error_code))
 
 #endif // ERROR_HANDLER
