@@ -16,7 +16,10 @@ rb_tree *dictionary_create()
     root->parent = NULL;
     rb_tree *dict = malloc(sizeof(rb_tree));
     if (!dict)
+    {
+        free(root);
         ERR("malloc", GENERAL_ERROR);
+    }
     dict->root = root;
     return dict;
 }
@@ -56,7 +59,10 @@ void dictionary_insert(rb_tree *dictionary, char *word)
     {
         p->word = malloc(sizeof(char) * (strlen(word) + 1));
         if (!p->word)
+        {
+            dictionary_destroy(dictionary);
             ERR("malloc", GENERAL_ERROR);
+        }
         strcpy(p->word, word);
         return;
     }
@@ -65,7 +71,10 @@ void dictionary_insert(rb_tree *dictionary, char *word)
     // create new element
     rb_node *new_element = malloc(sizeof(rb_node));
     if (!new_element)
+    {
+        dictionary_destroy(dictionary);
         ERR("malloc", GENERAL_ERROR);
+    }
     new_element->word = malloc(sizeof(char) * (strlen(word) + 1));
     strcpy(new_element->word, word);
     new_element->left = NULL;
@@ -85,7 +94,10 @@ void dictionary_load_from_file(rb_tree *dictionary, char *path)
 {
     FILE *file = fopen(path, "r");
     if (!file)
+    {
+        dictionary_destroy(dictionary);
         ERR("Couldn't open file", FILE_ERROR);
+    }
 
     char *line = NULL;
     size_t line_length = 0;
@@ -101,7 +113,10 @@ void dictionary_load_from_file(rb_tree *dictionary, char *path)
     free(line);
 
     if (fclose(file))
+    {
+        dictionary_destroy(dictionary);
         ERR("Couldn't close file", FILE_ERROR);
+    }
 }
 
 rb_node *dictionary_delete(rb_tree *dictionary, char *word)
