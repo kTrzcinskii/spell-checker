@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "spell_checker.h"
@@ -59,4 +60,54 @@ spell_checker_args load_args(int argc, char **argv)
     args.dictionary_file_path = path != NULL ? path : DEFAULT_DICTIONARY_FILE_PATH;
 
     return args;
+}
+
+int get_words_distance(char *s1, char *s2)
+{
+    // the result of this function is Levenshtein distance of two input words
+    // if error occurs -1 is returned
+    int n = strlen(s1) + 1;
+    int m = strlen(s2) + 1;
+
+    // allocate memory
+    int **distance_array = malloc(sizeof(int *) * n);
+    if (!distance_array)
+        return -1;
+    for (int i = 0; i < n; i++)
+    {
+        distance_array[i] = malloc(sizeof(int) * m);
+        if (!distance_array[i])
+        {
+            for (int j = 0; j < i; j++)
+                free(distance_array[j]);
+            free(distance_array);
+            return -1;
+        }
+    }
+
+    // fill up base case scenario
+    for (int i = 0; i < n; i++)
+        distance_array[i][0] = i;
+    for (int j = 0; j < m; j++)
+        distance_array[0][j] = j;
+
+    // calculate other distances
+    for (int i = 1; i < n; i++)
+        for (int j = 1; j < m; j++)
+        {
+            if (s1[i] == s2[j])
+                distance_array[i][j] = distance_array[i - 1][j - 1];
+            else
+                distance_array[i][j] = MIN(MIN(distance_array[i - 1][j], distance_array[i][j - 1]), distance_array[i - 1][j - 1]) + 1;
+        }
+
+    // get final distance
+    int distance = distance_array[n - 1][m - 1];
+
+    // cleanup allocated memory
+    for (int i = 0; i < n; i++)
+        free(distance_array[i]);
+    free(distance_array);
+
+    return distance;
 }

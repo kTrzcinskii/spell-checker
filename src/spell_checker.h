@@ -8,6 +8,8 @@
 #define DEFAULT_HINTS_LIMIT 10
 #define DEFAULT_DICTIONARY_FILE_PATH "./assets/small_words.txt"
 
+#define MIN(a, b) (a < b ? a : b)
+
 typedef struct __spell_checker_args
 {
     int hints_limit;            // followed by "-l" flag
@@ -16,3 +18,4 @@ typedef struct __spell_checker_args
 
 void usage(char *program_name);
 spell_checker_args load_args(int argc, char **argv);
+int get_words_distance(char *s1, char *s2);
