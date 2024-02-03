@@ -4,16 +4,36 @@
 
 #include "spell_checker.h"
 
+// TODO:
+// - add option to specify file with words to check, instead of writting them manually
+// TODO:
+// - add option to write output to files, where for every word there will be created file with hints for given word (when word is correct then file is empty)
+
 int main(int argc, char **argv)
 {
+    // load program options
     spell_checker_args args = load_args(argc, argv);
+
+    // create dictionary and populate it with data from file
     rb_tree *dictionary = dictionary_create();
     dictionary_load_from_file(dictionary, args.dictionary_file_path);
-    // TODO: add signal handling and make this loop end when SIGINT is received, dont terminate the whole program there as we want to cleanup the memory taken by dictionary
+
+    // main loop
+    char *current_word;
+    size_t current_word_length;
     while (1)
     {
-        // main loop
+        // TODO: add signal handling and make this loop end when C-D is received, dont terminate the whole program there as we want to cleanup the memory taken by dictionary
+        while (getline(&current_word, &current_word_length, stdin) != -1)
+        {
+            // remove endline from the word
+            current_word[strlen(current_word) - 1] = '\0';
+            handle_word(dictionary, current_word, args.hints_limit);
+        }
     }
+
+    // free alocated memory
+    free(current_word);
     dictionary_destroy(dictionary);
     return EXIT_SUCCESS;
 }
@@ -34,7 +54,7 @@ spell_checker_args load_args(int argc, char **argv)
     // l -> hints limits
     // p -> dictionary file path
     char c;
-    int val = 0;
+    size_t val = 0;
     char *path = NULL;
     while ((c = getopt(argc, argv, "l:p:")) != -1)
     {
@@ -62,6 +82,7 @@ spell_checker_args load_args(int argc, char **argv)
     return args;
 }
 
+// FIXME: the function sometimes return incorrect values
 int get_words_distance(char *s1, char *s2)
 {
     // the result of this function is Levenshtein distance of two input words
@@ -110,4 +131,79 @@ int get_words_distance(char *s1, char *s2)
     free(distance_array);
 
     return distance;
+}
+
+void handle_word(rb_tree *dictionary, char *word, int hints_limit)
+{
+    if (dictionary_search(dictionary, word, NULL))
+        printf("%s is correct!\n", word);
+    else
+    {
+        char **hints = NULL;
+        size_t hints_size = 0;
+        int min_distance = get_hints(dictionary, word, &hints, &hints_size, hints_limit);
+        if (hints_size == 0)
+        {
+            printf("%s is not correct, couldn't find any close words in the dictionary\n", word);
+        }
+        else
+        {
+            printf("%s is not correct, here are %ld closest words from dictionary (with %d Levenshtein distance):\n", word, hints_size, min_distance);
+            for (int i = 0; i < hints_size; i++)
+                printf("- %s\n", hints[i]);
+        }
+        free(hints);
+    }
+}
+
+bool is_word_in_dictionary(rb_tree *dictionary, char *word)
+{
+    if (dictionary_search(dictionary, word, NULL))
+        return true;
+    return false;
+}
+
+int get_hints(rb_tree *dictionary, char *word, char ***hints, size_t *hints_size, size_t hints_limit)
+{
+    int current_min_distance = __INT_MAX__;
+    size_t current_hints_size = 0;
+    *hints = malloc(sizeof(char *) * hints_limit);
+    if (!*hints)
+    {
+        dictionary_destroy(dictionary);
+        ERR("malloc", GENERAL_ERROR);
+    }
+
+    add_hint(dictionary->root, word, hints, &current_hints_size, &current_min_distance, hints_limit);
+
+    *hints_size = current_hints_size;
+    return current_min_distance;
+}
+
+void add_hint(rb_node *root, char *word, char ***hints, size_t *current_hints_size, int *current_min_distance, size_t hints_limit)
+{
+    if (!root)
+        return;
+
+    int dist = get_words_distance(word, root->word);
+
+    //   remove current hints and add only this hint
+    if (dist < *current_min_distance)
+    {
+        *current_min_distance = dist;
+        for (int i = 0; i < (*current_hints_size); i++)
+            (*hints)[i] = NULL;
+        *current_hints_size = 0;
+        (*hints)[(*current_hints_size)++] = root->word;
+    }
+
+    // add this hint to the list of other hints with same distance only if there is a space left
+    else if (dist == *current_min_distance && *current_hints_size < hints_limit)
+    {
+        (*hints)[(*current_hints_size)++] = root->word;
+    }
+
+    // recursively search in left and right subtrees
+    add_hint(root->left, word, hints, current_hints_size, current_min_distance, hints_limit);
+    add_hint(root->right, word, hints, current_hints_size, current_min_distance, hints_limit);
 }
