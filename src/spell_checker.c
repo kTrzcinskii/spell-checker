@@ -82,7 +82,6 @@ spell_checker_args load_args(int argc, char **argv)
     return args;
 }
 
-// FIXME: the function sometimes return incorrect values
 int get_words_distance(char *s1, char *s2)
 {
     // the result of this function is Levenshtein distance of two input words
@@ -116,7 +115,7 @@ int get_words_distance(char *s1, char *s2)
     for (int i = 1; i < n; i++)
         for (int j = 1; j < m; j++)
         {
-            if (s1[i] == s2[j])
+            if (s1[i - 1] == s2[j - 1])
                 distance_array[i][j] = distance_array[i - 1][j - 1];
             else
                 distance_array[i][j] = MIN(MIN(distance_array[i - 1][j], distance_array[i][j - 1]), distance_array[i - 1][j - 1]) + 1;
