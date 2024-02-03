@@ -11,4 +11,7 @@
 
 #define ERR(source, error_code) (perror(source), fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), exit(error_code))
 
+void handle_file_open_error(char *file_path);
+void handle_file_close_error(char *file_path);
+
 #endif // ERROR_HANDLER
