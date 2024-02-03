@@ -96,9 +96,7 @@ void dictionary_load_from_file(rb_tree *dictionary, char *path)
     if (!file)
     {
         dictionary_destroy(dictionary);
-        char buffer[ERROR_MESSAGE_BUFFER] = {0};
-        snprintf(buffer, ERROR_MESSAGE_BUFFER, "Couldn't open file (%s)", path);
-        ERR(buffer, FILE_ERROR);
+        handle_file_open_error(path);
     }
 
     char *line = NULL;
@@ -117,9 +115,7 @@ void dictionary_load_from_file(rb_tree *dictionary, char *path)
     if (fclose(file))
     {
         dictionary_destroy(dictionary);
-        char buffer[ERROR_MESSAGE_BUFFER] = {0};
-        snprintf(buffer, ERROR_MESSAGE_BUFFER, "Couldn't close file (%s)", path);
-        ERR(buffer, FILE_ERROR);
+        handle_file_close_error(path);
     }
 }
 
