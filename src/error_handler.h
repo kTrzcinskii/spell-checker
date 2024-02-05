@@ -2,6 +2,7 @@
 #define ERROR_HANDLER
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define GENERAL_ERROR EXIT_FAILURE
 #define NOT_IMPLEMENTED 2
