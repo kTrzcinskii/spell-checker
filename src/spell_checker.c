@@ -5,8 +5,6 @@
 #include "spell_checker.h"
 
 // TODO:
-// - add option to specify file with words to check, instead of writting them manually
-// TODO:
 // - add option to write output to files, where for every word there will be created file with hints for given word (when word is correct then file is empty)
 
 int main(int argc, char **argv)
@@ -18,31 +16,34 @@ int main(int argc, char **argv)
     rb_tree *dictionary = dictionary_create();
     dictionary_load_from_file(dictionary, args.dictionary_file_path);
 
+    char *current_word = NULL;
+    size_t current_word_length = 0;
+
+    // initalize input stream
+    FILE *input_stream = initialize_input_stream(dictionary, args);
+
     // main loop
-    char *current_word;
-    size_t current_word_length;
-    while (1)
+    while ((getline(&current_word, &current_word_length, input_stream) != -1))
     {
-        // TODO: add signal handling and make this loop end when C-D is received, dont terminate the whole program there as we want to cleanup the memory taken by dictionary
-        while (getline(&current_word, &current_word_length, stdin) != -1)
-        {
-            // remove endline from the word
-            current_word[strlen(current_word) - 1] = '\0';
-            handle_word(dictionary, current_word, args.hints_limit);
-        }
+        // remove endline from the word
+        current_word[strlen(current_word) - 1] = '\0';
+        handle_word(dictionary, current_word, args.hints_limit);
     }
 
     // free alocated memory
     free(current_word);
     dictionary_destroy(dictionary);
+    if (fclose(input_stream))
+        handle_file_close_error(args.input_file_path);
     return EXIT_SUCCESS;
 }
 
 void usage(char *program_name)
 {
-    fprintf(stderr, "USAGE: %s [-l hints_limits] [-p path]\n", program_name);
+    fprintf(stderr, "USAGE: %s [-l hints_limits] [-p path] [-i input]\n", program_name);
     fprintf(stderr, "hints_limits - maximum number of words returned as hints when provided word is not present in the dictionary [unsigned integer from range %d-%d, default - %d]\n", HINTS_LIMIT_MIN, HINTS_LIMIT_MAX, DEFAULT_HINTS_LIMIT);
-    fprintf(stderr, "path - path to the text file with dictionary data [string, default - %s]", DEFAULT_DICTIONARY_FILE_PATH);
+    fprintf(stderr, "path - path to the text file with dictionary data [string, default - %s]\n", DEFAULT_DICTIONARY_FILE_PATH);
+    fprintf(stderr, "input - path to the file with input words (each one in new line), when no input is provided then stdin is used as default input stream [string]\n");
     exit(EXIT_FAILURE);
 }
 
@@ -56,7 +57,8 @@ spell_checker_args load_args(int argc, char **argv)
     char c;
     size_t val = 0;
     char *path = NULL;
-    while ((c = getopt(argc, argv, "l:p:")) != -1)
+    char *input = NULL;
+    while ((c = getopt(argc, argv, "l:p:i:")) != -1)
     {
         switch (c)
         {
@@ -68,6 +70,9 @@ spell_checker_args load_args(int argc, char **argv)
         case 'p':
             path = optarg;
             break;
+        case 'i':
+            input = optarg;
+            break;
         case '?':
             usage(argv[0]);
         }
@@ -78,6 +83,7 @@ spell_checker_args load_args(int argc, char **argv)
 
     args.hints_limit = val != 0 ? val : DEFAULT_HINTS_LIMIT;
     args.dictionary_file_path = path != NULL ? path : DEFAULT_DICTIONARY_FILE_PATH;
+    args.input_file_path = input;
 
     return args;
 }
@@ -205,4 +211,18 @@ void add_hint(rb_node *root, char *word, char ***hints, size_t *current_hints_si
     // recursively search in left and right subtrees
     add_hint(root->left, word, hints, current_hints_size, current_min_distance, hints_limit);
     add_hint(root->right, word, hints, current_hints_size, current_min_distance, hints_limit);
+}
+
+FILE *initialize_input_stream(rb_tree *dictionary, spell_checker_args args)
+{
+    if (!args.input_file_path)
+        return DEFAULT_INPUT;
+
+    FILE *input_stream = fopen(args.input_file_path, "r");
+    if (!input_stream)
+    {
+        dictionary_destroy(dictionary);
+        handle_file_open_error(args.input_file_path);
+    }
+    return input_stream;
 }
