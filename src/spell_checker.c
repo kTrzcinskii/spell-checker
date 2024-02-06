@@ -1,11 +1,9 @@
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "spell_checker.h"
-
-// TODO:
-// - add option to write output to files, where for every word there will be created file with hints for given word (when word is correct then file is empty)
 
 int main(int argc, char **argv)
 {
@@ -22,12 +20,17 @@ int main(int argc, char **argv)
     // initalize input stream
     FILE *input_stream = initialize_input_stream(dictionary, args);
 
+    // initalize output directory
+    if (args.output_dir_path)
+        if (initialize_output_directory(args.output_dir_path))
+            handle_cannot_create_directory(args.output_dir_path);
+
     // main loop
     while ((getline(&current_word, &current_word_length, input_stream) != -1))
     {
         // remove endline from the word
         current_word[strlen(current_word) - 1] = '\0';
-        handle_word(dictionary, current_word, args.hints_limit);
+        handle_word(dictionary, current_word, args.hints_limit, args.output_dir_path);
     }
 
     // free alocated memory
@@ -54,11 +57,14 @@ spell_checker_args load_args(int argc, char **argv)
     // load args here
     // l -> hints limits
     // p -> dictionary file path
+    // i -> input file path
+    // o -> output directory path
     char c;
     size_t val = 0;
     char *path = NULL;
     char *input = NULL;
-    while ((c = getopt(argc, argv, "l:p:i:")) != -1)
+    char *output = NULL;
+    while ((c = getopt(argc, argv, "l:p:i:o:")) != -1)
     {
         switch (c)
         {
@@ -73,6 +79,9 @@ spell_checker_args load_args(int argc, char **argv)
         case 'i':
             input = optarg;
             break;
+        case 'o':
+            output = optarg;
+            break;
         case '?':
             usage(argv[0]);
         }
@@ -84,6 +93,7 @@ spell_checker_args load_args(int argc, char **argv)
     args.hints_limit = val != 0 ? val : DEFAULT_HINTS_LIMIT;
     args.dictionary_file_path = path != NULL ? path : DEFAULT_DICTIONARY_FILE_PATH;
     args.input_file_path = input;
+    args.output_dir_path = output;
 
     return args;
 }
@@ -138,27 +148,48 @@ int get_words_distance(char *s1, char *s2)
     return distance;
 }
 
-void handle_word(rb_tree *dictionary, char *word, int hints_limit)
+void handle_word(rb_tree *dictionary, char *word, int hints_limit, char *output_dir_path)
 {
+    char *output_path = NULL;
+    if (output_dir_path)
+        output_path = combine_path(output_dir_path, word);
+
+    FILE *output_stream = initialize_output_stream(dictionary, output_path);
+
     if (dictionary_search(dictionary, word, NULL))
-        printf("%s is correct!\n", word);
+        if (!output_path)
+            fprintf(output_stream, "%s is correct\n", word);
+        else
+            fprintf(output_stream, "%d\n", 1);
     else
     {
+        if (!output_path)
+            fprintf(output_stream, "%s is not correct\n", word);
+        else
+            fprintf(output_stream, "%d\n", 0);
+
         char **hints = NULL;
         size_t hints_size = 0;
         int min_distance = get_hints(dictionary, word, &hints, &hints_size, hints_limit);
-        if (hints_size == 0)
+
+        if (output_path)
+            fprintf(output_stream, "%ld\n", hints_size);
+
+        if (hints_size > 0)
         {
-            printf("%s is not correct, couldn't find any close words in the dictionary\n", word);
-        }
-        else
-        {
-            printf("%s is not correct, here are %ld closest words from dictionary (with %d Levenshtein distance):\n", word, hints_size, min_distance);
+            if (!output_path)
+                fprintf(output_stream, "Here are %ld closest words from dictionary (with %d Levenshtein distance):\n", hints_size, min_distance);
+            else
+                fprintf(output_stream, "%d\n", min_distance);
             for (int i = 0; i < hints_size; i++)
-                printf("- %s\n", hints[i]);
+                fprintf(output_stream, "%s\n", hints[i]);
         }
         free(hints);
     }
+
+    if (output_path && fclose(output_stream))
+        handle_file_close_error(output_path);
+    free(output_path);
 }
 
 bool is_word_in_dictionary(rb_tree *dictionary, char *word)
@@ -225,4 +256,58 @@ FILE *initialize_input_stream(rb_tree *dictionary, spell_checker_args args)
         handle_file_open_error(args.input_file_path);
     }
     return input_stream;
+}
+
+FILE *initialize_output_stream(rb_tree *dictionary, char *output_path)
+{
+    if (!output_path)
+        return DEFAULT_OUTPUT;
+
+    FILE *output_stream = fopen(output_path, "w");
+    if (!output_stream)
+    {
+        dictionary_destroy(dictionary);
+        handle_file_open_error(output_path);
+    }
+    return output_stream;
+}
+
+int initialize_output_directory(char *output_dir_path)
+{
+    char dir_path[DIR_BUFFER] = {0};
+    char *delim = "/";
+    char *token = strtok(output_dir_path, delim);
+
+    struct stat st = {0};
+    int res;
+
+    while (token != NULL)
+    {
+        if (token[0] == '.')
+        {
+            strcat(dir_path, token);
+            token = strtok(NULL, delim);
+            continue;
+        }
+        strcat(dir_path, delim);
+        strcat(dir_path, token);
+        // directory doesn't exist
+        if (stat(dir_path, &st) == -1)
+            if ((res = mkdir(dir_path, S_IRWXU | S_IRWXG | S_IRWXO)) == -1)
+                return res;
+        token = strtok(NULL, delim);
+    }
+
+    strcpy(output_dir_path, dir_path);
+    return 0;
+}
+
+char *combine_path(char *p1, char *p2)
+{
+    char *path = malloc(sizeof(char) * (strlen(p1) + strlen(p2) + 2));
+    strcpy(path, p1);
+    path[strlen(p1)] = '/';
+    path[strlen(p1) + 1] = '\0';
+    strcat(path, p2);
+    return path;
 }
