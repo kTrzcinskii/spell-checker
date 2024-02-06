@@ -14,5 +14,6 @@
 
 void handle_file_open_error(char *file_path);
 void handle_file_close_error(char *file_path);
+void handle_cannot_create_directory(char *directory_path);
 
 #endif // ERROR_HANDLER
