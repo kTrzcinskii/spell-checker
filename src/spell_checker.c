@@ -43,10 +43,11 @@ int main(int argc, char **argv)
 
 void usage(char *program_name)
 {
-    fprintf(stderr, "USAGE: %s [-l hints_limits] [-p path] [-i input]\n", program_name);
+    fprintf(stderr, "USAGE: %s [-l hints_limits] [-p path] [-i input] [-o output]\n", program_name);
     fprintf(stderr, "hints_limits - maximum number of words returned as hints when provided word is not present in the dictionary [unsigned integer from range %d-%d, default - %d]\n", HINTS_LIMIT_MIN, HINTS_LIMIT_MAX, DEFAULT_HINTS_LIMIT);
     fprintf(stderr, "path - path to the text file with dictionary data [string, default - %s]\n", DEFAULT_DICTIONARY_FILE_PATH);
     fprintf(stderr, "input - path to the file with input words (each one in new line), when no input is provided then stdin is used as default input stream [string]\n");
+    fprintf(stderr, "output - path to the directory in which results will be saved (for each word there will be different file). If directory doesn't exist it will be created. When no output is provided then stdout is used to return results [string]\n");
     exit(EXIT_FAILURE);
 }
 
