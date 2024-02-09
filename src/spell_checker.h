@@ -1,3 +1,6 @@
+#ifndef SPELL_CHECKER
+#define SPELL_CHECKER
+
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -34,3 +37,5 @@ FILE *initialize_input_stream(rb_tree *dictionary, spell_checker_args args);
 FILE *initialize_output_stream(rb_tree *dictionary, char *output_path);
 int initialize_output_directory(char *output_dir_path);
 char *combine_path(char *p1, char *p2);
+
+#endif // SPELL_CHECKER
