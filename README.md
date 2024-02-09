@@ -3,6 +3,8 @@
 ## Introduction
 Spell Checker is command line program written in C that checks if the word is correct (according to the provided dictionary). In case when the word can be found in the dictionary then it's considered to be correct. Otherwise, spell checker goes through dictionary and find words which are closest to the provided word. Levenshtein distance is used for calculating distance between two words.
 
+The main goal of this project was to practice data structures (specifically red-black trees) and to learn more about Levenshtein distance and how to calculate it properly and quickly.
+
 ## Usage
 
 For very basic usage you can enter directory project and just run:
@@ -85,7 +87,10 @@ make all
 ```
 
 ## Implementation
-TODO
+For storing dictionary in memory I decided to use red-black trees. All of its implementation is written by me. It works well with relatively small files (with thousands of words) but when it comes to bigger files it's almost unusable. I didn't find any solution for this issue.
+Calculating Levenshtein distance is implemented using dynamic programming to make it as fast as possible.
 
 ## References
-TODO
+- [Red-Black Trees](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)
+- [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
+- [The Algorithm Behind Spell Checkers](https://www.youtube.com/watch?v=d-Eq6x1yssU&t=398s&ab_channel=b001) (it's a video that got me interested in the subject)
